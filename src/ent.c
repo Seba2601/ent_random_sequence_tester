@@ -46,6 +46,8 @@
 #define PI       3.14159265358979323846
 #endif
 
+extern double poz(const double z);
+
 extern double pochisq(const double ax, const int df);
 
 /*  HELP  --  Print information on how to call  */
@@ -59,6 +61,7 @@ static void help(void)
         printf("\n                   -c   Print occurrence counts");
         printf("\n                   -f   Fold upper to lower case letters");
         printf("\n                   -t   Terse output in CSV format");
+        printf("\n                   -p   Include p-values");
         printf("\n                   -u   Print this message\n");
         printf("\nVersion " VERSION);
         printf("\nBy John Walker");
@@ -107,9 +110,10 @@ int main(int argc, char *argv[])
         int counts = FALSE,           /* Print character counts */
             fold = FALSE,             /* Fold upper to lower */
             binary = FALSE,           /* Treat input as a bitstream */
-            terse = FALSE;            /* Terse (CSV format) output */
+            terse = FALSE,            /* Terse (CSV format) output */ 
+            csp = FALSE;              /* Include p-values */
 
-        while ((opt = getopt(argc, argv, "bcftuv?BCFTUV")) != -1) {
+        while ((opt = getopt(argc, argv, "bcftpuv?BCFTPUV")) != -1) {
             switch (toISOlower(opt)) {
                  case 'b':
                     binary = TRUE;
@@ -125,6 +129,10 @@ int main(int argc, char *argv[])
 
                  case 't':
                     terse = TRUE;
+                    break;
+
+                 case 'p':
+                    csp = TRUE;
                     break;
 
                  case '?':
@@ -200,21 +208,25 @@ int main(int argc, char *argv[])
         }
         fclose(fp);
 
-        /* Complete calculation and return sequence metrics */
+        /* Complete calculation */
 
         rt_end(&ent, &chisq, &mean, &montepi, &scc);
 
-        if (terse) {
-           printf("0,File-%ss,Entropy,Chi-square,Mean,Monte-Carlo-Pi,Serial-Correlation\n",
-              binary ? "bit" : "byte");
-           printf("1,%ld,%f,%f,%f,%f,%f\n",
-              totalc, ent, chisq, mean, montepi, scc);
-        }
-
-        /* Calculate probability of observed distribution occurring from
-           the results of the Chi-Square test */
+        /* Calculate p-value for Chi-square test*/
 
         chip = pochisq(chisq, (binary ? 1 : 255));
+
+         /* Print terse output if requested */
+
+        if (terse) {
+            if (csp) {
+                  printf("0,File-%ss,Entropy,Chi-square,Chi-square-p-val,Mean,Monte-Carlo-Pi,Serial-Correlation\n", binary ? "bit" : "byte");
+                  printf("1,%ld,%f,%f,%f,%f,%f,%f\n", totalc, ent, chisq, chip, mean, montepi, scc);
+            } else {
+                  printf("0,File-%ss,Entropy,Chi-square,Mean,Monte-Carlo-Pi,Serial-Correlation\n", binary ? "bit" : "byte");
+                  printf("1,%ld,%f,%f,%f,%f,%f\n", totalc, ent, chisq, mean, montepi, scc);
+            }  
+        }
 
         /* Print bin counts if requested */
 
@@ -251,34 +263,69 @@ int main(int argc, char *argv[])
 
         /* Print calculated results */
 
-        if (!terse) {
-           printf("Entropy = %f bits per %s.\n", ent, samp);
+        if (!terse && !csp) {
+           printf("StringENT | Results report\n");
+           printf("--------------------------------------------------\n");
+           printf("Entropy = %f bits per %s.", ent, samp);
            printf("\nOptimum compression would reduce the size\n");
-           printf("of this %ld %s file by %d percent.\n\n", totalc, samp,
+           printf("of this %ld %s file by %d percent.\n", totalc, samp,
                     (short) ((100 * ((binary ? 1 : 8) - ent) /
                               (binary ? 1.0 : 8.0))));
+           printf("--------------------------------------------------\n");
            printf(
               "Chi square distribution for %ld samples is %1.2f, and randomly\n",
               totalc, chisq);
            if (chip < 0.0001) {
-              printf("would exceed this value less than 0.01 percent of the times.\n\n");
+              printf("would exceed this value less than 0.01 percent of the times.\n");
            } else if (chip > 0.9999) {
-              printf("would exceed this value more than than 99.99 percent of the times.\n\n");
+              printf("would exceed this value more than than 99.99 percent of the times.\n");
            } else {
-              printf("would exceed this value %1.2f percent of the times.\n\n",
+              printf("would exceed this value %1.2f percent of the times.\n",
                  chip * 100);
            }
+           printf("--------------------------------------------------\n");
            printf(
               "Arithmetic mean value of data %ss is %1.4f (%.1f = random).\n",
               samp, mean, binary ? 0.5 : 127.5);
+           printf("--------------------------------------------------\n");
            printf("Monte Carlo value for Pi is %1.9f (error %1.2f percent).\n",
               montepi, 100.0 * (fabs(PI - montepi) / PI));
+           printf("--------------------------------------------------\n");
            printf("Serial correlation coefficient is ");
            if (scc >= -99999) {
               printf("%1.6f (totally uncorrelated = 0.0).\n", scc);
            } else {
               printf("undefined (all values equal!).\n");
            }
+           printf("--------------------------------------------------\n");
+        } else if (!terse) {
+           printf("StringENT | Results report\n");
+           printf("--------------------------------------------------\n");
+           printf("Entropy = %f bits per %s.", ent, samp);
+           printf("\nOptimum compression would reduce the size\n");
+           printf("of this %ld %s file by %d percent.\n", totalc, samp,
+                    (short) ((100 * ((binary ? 1 : 8) - ent) /
+                              (binary ? 1.0 : 8.0))));
+           printf("--------------------------------------------------\n");
+           printf(
+              "Chi square distribution for %ld samples is %1.2f.\n",
+              totalc, chisq);
+           printf("p-value   %f\n", chip);
+           printf("--------------------------------------------------\n");
+           printf(
+              "Arithmetic mean value of data %ss is %1.4f (%.1f = random).\n",
+              samp, mean, binary ? 0.5 : 127.5);
+           printf("--------------------------------------------------\n");
+           printf("Monte Carlo value for Pi is %1.9f (error %1.2f percent).\n",
+              montepi, 100.0 * (fabs(PI - montepi) / PI));
+           printf("--------------------------------------------------\n");
+           printf("Serial correlation coefficient is ");
+           if (scc >= -99999) {
+              printf("%1.6f (totally uncorrelated = 0.0).\n", scc);
+           } else {
+              printf("undefined (all values equal!).\n");
+           }
+           printf("--------------------------------------------------\n");
         }
 
         return 0;
