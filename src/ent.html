@@ -274,6 +274,13 @@ The values calculated are as follows:
                 data such as uncompressed bitmaps will exhibit serial
                 correlation coefficients approaching 1.  See [Knuth,
                 pp.&nbsp;64&ndash;65] for more details.</dd>
+
+<dt><b>Runs Test</b></dt>
+<dd>  A run is defined as a series of increasing values or a series of
+      decreasing values. The number of increasing, or decreasing, values is 
+      the length of the run. In a random data set, the probability that the 
+      (I+1)th value is larger or smaller than the Ith value follows a binomial
+      distribution, which forms the basis of the runs test.</dd>
 </dl>
 
 <h3>OPTIONS</h3>
@@ -333,8 +340,8 @@ consist of two records, as follows:
 </p>
 
 <pre>
-0,File-bytes,Entropy,Chi-square,Mean,Monte-Carlo-Pi,Serial-Correlation
-1,<em>file_length</em>,<em>entropy</em>,<em>chi_square</em>,<em>mean</em>,<em>Pi_value</em>,<em>correlation</em>
+0,File-bytes,Entropy,Chi-square,Mean,Monte-Carlo-Pi,Serial-Correlation,Runs,Local-Means-X^2
+1,<em>file_length</em>,<em>entropy</em>,<em>chi_square</em>,<em>mean</em>,<em>Pi_value</em>,<em>correlation</em>,<em>runs</em>,<em>local_means_x^2</em>
 </pre>
 
 <p>
@@ -347,14 +354,14 @@ in bits instead of bytes.
 </p>
 
 <p>
-Specifying <b>-p</b> in conjunction with <b>-t</b> includes the p-values ofr the tests in the CSV output. Note that it is provided as decimal, not as a percentage. When specified, the output becomes:
+Specifying <b>-p</b> in conjunction with <b>-t</b> includes the p-values for the tests in the CSV output. Note that it is provided as decimal, not as a percentage. When specified, the output becomes:
 </p>
 
 <pre>
 0,File-bytes,Entropy,Chi-square,Chi-square-p-val,Mean,Mean-p-val,Monte-Carlo-Pi,Monte-Carlo-Pi-p-val,
                         Serial-Correlation,Serial-Correlation-p-val,Runs,Runs-p-val,Local-Means-X^2,Local-Means-p-val
-1,<em>file_length</em>,<em>entropy</em>,<em>chi_square</em>,<em>chi_square_p_val</em>,<em>mean</em>,<em>mean-p-val</em>,<em>Pi_value</em>,<em>Pi_value-p-val</em>,<em>correlation</em>,<em>correlation-pval</em>,
-                        <em>runs</em>,<em>runs-p-val</em>,<em>local_means_x^2</em>,<em>local_means_pval</em>
+1,<em>file_length</em>,<em>entropy</em>,<em>chi_square</em>,<em>chi_square-p-val</em>,<em>mean</em>,<em>mean-p-val</em>,<em>Pi_value</em>,<em>Pi_value-p-val</em>,<em>correlation</em>,<em>correlation-p-val</em>,
+                        <em>runs</em>,<em>runs-p-val</em>,<em>local_means_x^2</em>,<em>local_means-p-val</em>
 </pre>
 
 <p>

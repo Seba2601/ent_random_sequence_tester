@@ -32,12 +32,13 @@ static double rt_log2(double x)
                                          bits than the mantissa of your
                                          "double" floating point type. */
 
-static int mp, sccfirst;
+static int mp, sccfirst, runs;
 static unsigned int monte[MONTEN];
 static long inmont, mcount;
 static double cexp, incirc, montex, montey, montepi,
               scc, sccun, sccu0, scclast, scct1, scct2, scct3,
-              ent, chisq, datasum;
+              ent, chisq, datasum, runsstart, runslast, median, 
+              posval, negval, expruns, stddevruns, runsz;
 
 /*  RT_INIT  --  Initialise random test counters.  */
 
@@ -57,6 +58,16 @@ void rt_init(int binmode)
     mcount = 0;                /* Clear Monte Carlo tries */
     inmont = 0;                /* Clear Monte Carlo inside count */
     incirc = 65535.0 * 65535.0;/* In-circle distance for Monte Carlo */
+
+    runs = 1;                  /* Clear run length */
+    runsstart = TRUE;          /* Mark first time for run length */
+    runslast = 0.0;            /* Clear last run element */
+    median = 127.5;              /* Clear median value */
+    posval = 0.0;              /* Clear positive value counts*/
+    negval = 0.0;              /* Clear negative value counts */
+    expruns = 0.0;             /* Clear expected number of runs*/
+    stddevruns = 0.0;          /* Clear standatrd deviation of runs */
+    runsz = 0.0;               /* Clear z-statistic of runs test*/
 
     sccfirst = TRUE;           /* Mark first time for serial correlation */
     scct1 = scct2 = scct3 = 0.0; /* Clear serial correlation terms */
@@ -122,6 +133,28 @@ void rt_add(void *buf, int bufl)
           scct2 = scct2 + sccun;
           scct3 = scct3 + (sccun * sccun);
           scclast = sccun;
+
+          /* Update calculation for runs test */
+
+          if(runsstart) {
+             runsstart = FALSE;
+             runslast = 0;
+          } else {
+             if (c > median && runslast < median) {
+                  runs++;
+             }
+             else if (c < median && runslast > median) {
+                  runs++;
+             }
+          }
+          runslast = c;
+
+          if(c > median) {
+             posval++;
+          } else {
+             negval++;
+          }
+
           oc <<= 1;
        } while (binary && (++bean < 8));
     }
@@ -130,7 +163,8 @@ void rt_add(void *buf, int bufl)
 /*  RT_END  --  Complete calculation and return results.  */
 
 void rt_end(double *r_ent, double *r_chisq, double *r_mean,
-            double *r_montepicalc, double *r_scc)
+            double *r_montepicalc, double *r_scc, int *r_runs,
+            double *r_runsz)
 {
     int i;
 
@@ -173,6 +207,15 @@ void rt_end(double *r_ent, double *r_chisq, double *r_mean,
 
     montepi = 4.0 * (((double) inmont) / mcount);
 
+    /* Calculate expected number of runs and standard deviation of the number of runs for runs test*/
+
+    expruns = (2 * posval * negval) / (posval + negval) + 1;
+
+    stddevruns = (2 * posval * negval * (2 * posval * negval - posval - negval)) /
+                 ((posval + negval) * (posval + negval) * (posval + negval - 1));
+
+    runsz = (runs - expruns) / sqrt(stddevruns);
+
     /* Return results through arguments */
 
     *r_ent = ent;
@@ -180,4 +223,6 @@ void rt_end(double *r_ent, double *r_chisq, double *r_mean,
     *r_mean = datasum / totalc;
     *r_montepicalc = montepi;
     *r_scc = scc;
+    *r_runs = runs;
+    *r_runsz = runsz;
 }

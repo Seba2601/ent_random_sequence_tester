@@ -110,7 +110,9 @@ int main(int argc, char *argv[])
         double mean, meanz, meanp;    /*Variables for Mean test*/
         double montepi, mcount,       /* Variables for Monte Carlo test*/
                montepiz, montepip;
-        double scc, scct, sccp;      /* Variables for Serial Correlation test*/
+        double scc, scct, sccp;       /* Variables for Serial Correlation test*/
+        double runsz, runsp;          /* Variables for Runs test*/
+        int runs;
         
         FILE *fp = stdin;
         int counts = FALSE,           /* Print character counts */
@@ -216,7 +218,7 @@ int main(int argc, char *argv[])
 
         /* Complete calculation */
 
-        rt_end(&ent, &chisq, &mean, &montepi, &scc);
+        rt_end(&ent, &chisq, &mean, &montepi, &scc, &runs, &runsz);
 
         /* Calculate p-value for Chi-square test*/
 
@@ -236,16 +238,17 @@ int main(int argc, char *argv[])
 
         sccp = 2 * (1 - poz(fabs(scct) * (1 - 1 / (4 * totalc)) * pow((1 + (pow(scct, 2)) / (2 * totalc)), -0.5)));
 
+        runsp = 2 * (1 - poz(fabs(runsz)));
 
          /* Print terse output if requested */
 
         if (terse) {
             if (csp) {
-                  printf("0,File-%ss,Entropy,Chi-square,Chi-square-p-val,Mean,Mean-p-val,Monte-Carlo-Pi,Monte-Carlo-Pi-p-val,Serial-Correlation,Serial-Correlation-p-val\n", binary ? "bit" : "byte");
-                  printf("1,%ld,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", totalc, ent, chisq, chip, mean, meanp, montepi, montepip, scc, sccp);
+                  printf("0,File-%ss,Entropy,Chi-square,Chi-square-p-val,Mean,Mean-p-val,Monte-Carlo-Pi,Monte-Carlo-Pi-p-val,Serial-Correlation,Serial-Correlation-p-val,Runs,Runs-p-val\n", binary ? "bit" : "byte");
+                  printf("1,%ld,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f\n", totalc, ent, chisq, chip, mean, meanp, montepi, montepip, scc, sccp, runs, runsp);
             } else {
-                  printf("0,File-%ss,Entropy,Chi-square,Mean,Monte-Carlo-Pi,Serial-Correlation\n", binary ? "bit" : "byte");
-                  printf("1,%ld,%f,%f,%f,%f,%f\n", totalc, ent, chisq, mean, montepi, scc);
+                  printf("0,File-%ss,Entropy,Chi-square,Mean,Monte-Carlo-Pi,Serial-Correlation,Runs\n", binary ? "bit" : "byte");
+                  printf("1,%ld,%f,%f,%f,%f,%f,%d\n", totalc, ent, chisq, mean, montepi, scc, runs);
             }  
         }
 
@@ -319,6 +322,8 @@ int main(int argc, char *argv[])
               printf("undefined (all values equal!).\n");
            }
            printf("--------------------------------------------------\n");
+           printf("The number of runs test is %d runs.\n", runs);
+           printf("--------------------------------------------------\n");
         } else if (!terse) {
            printf("StringENT | Results report\n");
            printf("--------------------------------------------------\n");
@@ -350,6 +355,10 @@ int main(int argc, char *argv[])
            }
            printf("p-value   %f\n", sccp);
            printf("--------------------------------------------------\n");
+           printf("The number of runs test is %d runs.\n", runs);
+           printf("p-value   %f\n", runsp);
+           printf("--------------------------------------------------\n");
+           
         }
 
         return 0;
