@@ -30,7 +30,7 @@
                 This routine has six digit accuracy, so it is only useful for absolute
                 z values < 6.  For z values >= to 6.0, poz() returns 0.0.
 */
-static double        /*VAR returns cumulative probability from -oo to z */
+double        /*VAR returns cumulative probability from -oo to z */
 poz(const double z)  /*VAR normal z value */
 {
     double y, x, w;

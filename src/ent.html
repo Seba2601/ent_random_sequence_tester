@@ -304,6 +304,9 @@ The values calculated are as follows:
                <a href="#Terse">Terse Mode Output Format</a>
                below for additional details.</dd>
 
+<dt><b>-p</b></dt>  <dd>P-value mode: output includes the p-value for 
+               the tests.</dd>               
+
 <dt><b>-u</b></dt>  <dd>Print how-to-call information.</dd>
 </dl>
 
@@ -340,7 +343,22 @@ numerical values for the quantities named in the type 0
 column title record.  If the <b>-b</b> option is specified, the second
 field of the type 0 record will be &ldquo;<tt>File-bits</tt>&rdquo;, and
 the <em>file_length</em> field in type 1 record will be given
-in bits instead of bytes.  If the <b>-c</b> option is specified,
+in bits instead of bytes.
+</p>
+
+<p>
+Specifying <b>-p</b> in conjunction with <b>-t</b> includes the p-values ofr the tests in the CSV output. Note that it is provided as decimal, not as a percentage. When specified, the output becomes:
+</p>
+
+<pre>
+0,File-bytes,Entropy,Chi-square,Chi-square-p-val,Mean,Mean-p-val,Monte-Carlo-Pi,Monte-Carlo-Pi-p-val,
+                        Serial-Correlation,Serial-Correlation-p-val,Runs,Runs-p-val,Local-Means-X^2,Local-Means-p-val
+1,<em>file_length</em>,<em>entropy</em>,<em>chi_square</em>,<em>chi_square_p_val</em>,<em>mean</em>,<em>mean-p-val</em>,<em>Pi_value</em>,<em>Pi_value-p-val</em>,<em>correlation</em>,<em>correlation-pval</em>,
+                        <em>runs</em>,<em>runs-p-val</em>,<em>local_means_x^2</em>,<em>local_means_pval</em>
+</pre>
+
+<p>
+If the <b>-c</b> option is specified,
 additional records are appended to the terse mode output which
 contain the character counts:
 </p>
