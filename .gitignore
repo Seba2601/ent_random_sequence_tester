@@ -6,3 +6,6 @@ ent
 
 # Binary files (generic)
 *.bin
+
+# Text files
+*.txt
