@@ -9,13 +9,12 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define FALSE 0
 #define TRUE  1
 
 #define log2of10 3.32192809488736234787
-
-#define B 200000                   /* Max number of blocks*/
 
 static int binary = FALSE;         /* Treat input as a bitstream */
 
@@ -23,7 +22,8 @@ static long ccount[256],           /* Bins to count occurrences of values */
             totalc = 0;            /* Total bytes counted */
 static double prob[256];           /* Probabilities per bin for entropy */
 
-static double local_means[B];      /* Local means for local means test */
+static double *local_means = NULL;
+static int local_means_capacity = 0; /* Capacity of local means array */
 
 static int local_means_count = 0;  /* Number of local means calculated */
 
@@ -96,6 +96,14 @@ void rt_init(int binmode)
         lmccount[i] = 0;
     }
     totblock = 0;
+
+    local_means_count = 0;
+    local_means_capacity = 1000;  // iniziale, espandibile
+    local_means = malloc(local_means_capacity * sizeof(double));
+    if (local_means == NULL) {
+       fprintf(stderr, "Error: failed to allocate memory for local_means.\n");
+       exit(EXIT_FAILURE);
+    }
 }
 
 /*  RT_ADD  --  Add one or more bytes to accumulation.  */
@@ -186,11 +194,17 @@ void rt_add(void *buf, int bufl)
                }
                mean /= M;
 
-               if (local_means_count < B) {
-                  local_means[local_means_count++] = mean;
-               } else {
-                  printf("Error: exceeded the maximum limit of local means.\n");
+               if (local_means_count >= local_means_capacity) {
+                  local_means_capacity *= 2;
+                  double *new_ptr = realloc(local_means, local_means_capacity * sizeof(double));
+               if (new_ptr == NULL) {
+                  fprintf(stderr, "Error: failed to reallocate memory for local_means.\n");
+                  free(local_means);
+                  exit(EXIT_FAILURE);
                }
+               local_means = new_ptr;
+               }
+               local_means[local_means_count++] = mean;
 
                for (i = 0; i < 256; i++) {
                   lmccount[i] = 0;
@@ -279,4 +293,11 @@ void rt_end(double *r_ent, double *r_chisq, double *r_mean,
     *r_runsz = runsz;
     *r_N = N;
     *r_lm_chisq = lm_chisq;
+}
+
+void rt_free() {
+    if (local_means != NULL) {
+        free(local_means);
+        local_means = NULL;
+    }
 }

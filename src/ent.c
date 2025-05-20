@@ -247,6 +247,10 @@ int main(int argc, char *argv[])
             locmeanp = pochisq(lm_chisq, N);
         }
 
+        /* Free memory allocated for local means test */
+
+        rt_free();
+
         /* Print terse output if requested */
 
         if (terse) {
