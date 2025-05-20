@@ -105,17 +105,17 @@ int main(int argc, char *argv[])
         long totalc = 0;              /* Total character count */
         char *samp;
 
-        double ent;                   /*Variables for Entropy test*/
-        double chisq, chip;           /*Variables for Chi-square test*/
-        double mean, meanz, meanp;    /*Variables for Mean test*/
+        double ent = 0.0;                   /*Variables for Entropy test*/
+        double chisq, chip = 0.0;           /*Variables for Chi-square test*/
+        double mean, meanz, meanp = 0.0;    /*Variables for Mean test*/
         double montepi, mcount,       /* Variables for Monte Carlo test*/
-               montepiz, montepip;
-        double scc, scct, sccp;       /* Variables for Serial Correlation test*/
-        double runsz, runsp;          /* Variables for Runs test*/
-        int runs;
+               montepiz, montepip = 0.0;
+        double scc, scct, sccp = 0.0;       /* Variables for Serial Correlation test*/
+        double runsz, runsp = 0.0;          /* Variables for Runs test*/
+        int runs = 0;
         
-        int N;                        /* Variables for Local Means test*/     
-        double lm_chisq,locmeanp;            
+        int N = 0;                        /* Variables for Local Means test*/     
+        double lm_chisq,locmeanp = 0.0;            
 
         FILE *fp = stdin;
         int counts = FALSE,           /* Print character counts */
@@ -223,27 +223,29 @@ int main(int argc, char *argv[])
 
         rt_end(&ent, &chisq, &mean, &montepi, &scc, &runs, &runsz, &N, &lm_chisq);
 
-        /* Calculate p-value for Chi-square test*/
+        /* Calculate p-value for the tests*/
 
-        chip = pochisq(chisq, (binary ? 1 : 255));
+        if (csp) {
+            chip = pochisq(chisq, (binary ? 1 : 255));
 
-        meanz = (sqrt(totalc) * (mean - 127.5)) / (sqrt((pow(256, 2) - 1) / 12.0));
+            meanz = (sqrt(totalc) * (mean - 127.5)) / (sqrt((pow(256, 2) - 1) / 12.0));
 
-        meanp = 2 * (1 - poz(fabs(meanz)));
+            meanp = 2 * (1 - poz(fabs(meanz)));
 
-        mcount = floor(totalc / 6.0);
+            mcount = floor(totalc / 6.0);
 
-        montepiz = sqrt(mcount) * (montepi - PI) / (4 * sqrt(PI/4 * (1 - PI/4)));
+            montepiz = sqrt(mcount) * (montepi - PI) / (4 * sqrt(PI/4 * (1 - PI/4)));
 
-        montepip = 2 * (1 - poz(fabs(montepiz)));
+            montepip = 2 * (1 - poz(fabs(montepiz)));
 
-        scct = (scc * sqrt(totalc - 2)) / sqrt(1 - (scc * scc));
+            scct = (scc * sqrt(totalc - 2)) / sqrt(1 - (scc * scc));
 
-        sccp = 2 * (1 - poz(fabs(scct) * (1 - 1 / (4 * totalc)) * pow((1 + (pow(scct, 2)) / (2 * totalc)), -0.5)));
+            sccp = 2 * (1 - poz(fabs(scct) * (1 - 1 / (4 * totalc)) * pow((1 + (pow(scct, 2)) / (2 * totalc)), -0.5)));
 
-        runsp = 2 * (1 - poz(fabs(runsz)));
+            runsp = 2 * (1 - poz(fabs(runsz)));
 
-        locmeanp = pochisq(lm_chisq, N);
+            locmeanp = pochisq(lm_chisq, N);
+        }
 
         /* Print terse output if requested */
 
