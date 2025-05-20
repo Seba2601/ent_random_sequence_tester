@@ -8,17 +8,27 @@
 */
 
 #include <math.h>
+#include <stdio.h>
 
 #define FALSE 0
 #define TRUE  1
 
 #define log2of10 3.32192809488736234787
 
+#define B 200000                   /* Max number of blocks*/
+
 static int binary = FALSE;         /* Treat input as a bitstream */
 
 static long ccount[256],           /* Bins to count occurrences of values */
             totalc = 0;            /* Total bytes counted */
 static double prob[256];           /* Probabilities per bin for entropy */
+
+static double local_means[B];      /* Local means for local means test */
+
+static int local_means_count = 0;  /* Number of local means calculated */
+
+static long lmccount[256],         /* Bins to count occurrences of values in the block */
+            totblock = 0;          /* Total blocks counted for local means */
 
 /*  RT_LOG2  --  Calculate log to the base 2  */
 
@@ -32,13 +42,15 @@ static double rt_log2(double x)
                                          bits than the mantissa of your
                                          "double" floating point type. */
 
-static int mp, sccfirst, runs;
+#define M 1024                        /* Number of bytes in a block for local means */
+
+static int mp, sccfirst, runs, N;
 static unsigned int monte[MONTEN];
 static long inmont, mcount;
 static double cexp, incirc, montex, montey, montepi,
               scc, sccun, sccu0, scclast, scct1, scct2, scct3,
               ent, chisq, datasum, runsstart, runslast, median, 
-              posval, negval, expruns, stddevruns, runsz;
+              posval, negval, expruns, stddevruns, runsz, lm_chisq;
 
 /*  RT_INIT  --  Initialise random test counters.  */
 
@@ -57,27 +69,33 @@ void rt_init(int binmode)
     mp = 0;                    /* Reset Monte Carlo accumulator pointer */
     mcount = 0;                /* Clear Monte Carlo tries */
     inmont = 0;                /* Clear Monte Carlo inside count */
-    incirc = 65535.0 * 65535.0;/* In-circle distance for Monte Carlo */
+    incirc = pow(pow(256.0, (double) (MONTEN / 2)) - 1, 2.0);  /* In-circle distance for Monte Carlo */
+
+    sccfirst = TRUE;             /* Mark first time for serial correlation */
+    scct1 = scct2 = scct3 = 0.0; /* Clear serial correlation terms */
 
     runs = 1;                  /* Clear run length */
     runsstart = TRUE;          /* Mark first time for run length */
     runslast = 0.0;            /* Clear last run element */
-    median = 127.5;              /* Clear median value */
+    median = 127.5;            /* Median value for byte data*/
     posval = 0.0;              /* Clear positive value counts*/
     negval = 0.0;              /* Clear negative value counts */
     expruns = 0.0;             /* Clear expected number of runs*/
     stddevruns = 0.0;          /* Clear standatrd deviation of runs */
     runsz = 0.0;               /* Clear z-statistic of runs test*/
 
-    sccfirst = TRUE;           /* Mark first time for serial correlation */
-    scct1 = scct2 = scct3 = 0.0; /* Clear serial correlation terms */
-
-    incirc = pow(pow(256.0, (double) (MONTEN / 2)) - 1, 2.0);
+    N = 0;                     /* Clear number of blocks*/
+    lm_chisq = 0.0;            /* Clear Chi-square for local means test */
 
     for (i = 0; i < 256; i++) {
         ccount[i] = 0;
     }
     totalc = 0;
+
+    for (i = 0; i < 256; i++) {
+        lmccount[i] = 0;
+    }
+    totblock = 0;
 }
 
 /*  RT_ADD  --  Add one or more bytes to accumulation.  */
@@ -138,7 +156,6 @@ void rt_add(void *buf, int bufl)
 
           if(runsstart) {
              runsstart = FALSE;
-             runslast = 0;
           } else {
              if (c > median && runslast < median) {
                   runs++;
@@ -155,6 +172,34 @@ void rt_add(void *buf, int bufl)
              negval++;
           }
 
+          /* Update calculation of local means */
+
+            if (totblock < M) {
+               lmccount[c]++;
+               totblock++;
+            } else {
+               double mean = 0.0;
+               int i;
+
+               for(i=0; i < 256; i++) {
+                  mean += ((double) i) * lmccount[i];
+               }
+               mean /= M;
+
+               if (local_means_count < B) {
+                  local_means[local_means_count++] = mean;
+               } else {
+                  printf("Error: exceeded the maximum limit of local means.\n");
+               }
+
+               for (i = 0; i < 256; i++) {
+                  lmccount[i] = 0;
+               }
+               lmccount[c]++;
+               totblock = 1;
+               N++;
+            }
+
           oc <<= 1;
        } while (binary && (++bean < 8));
     }
@@ -164,7 +209,7 @@ void rt_add(void *buf, int bufl)
 
 void rt_end(double *r_ent, double *r_chisq, double *r_mean,
             double *r_montepicalc, double *r_scc, int *r_runs,
-            double *r_runsz)
+            double *r_runsz, int *r_N, double *r_lm_chisq)
 {
     int i;
 
@@ -216,6 +261,13 @@ void rt_end(double *r_ent, double *r_chisq, double *r_mean,
 
     runsz = (runs - expruns) / sqrt(stddevruns);
 
+    /* Calculate Chi-Square distribution for local means test*/
+
+    for (i = 0; i < local_means_count; i++) {
+         double zstat = sqrt(M) * (local_means[i] - 127.5) / (sqrt((pow(256, 2) - 1) / 12.0));
+         lm_chisq += (zstat * zstat);
+      }
+
     /* Return results through arguments */
 
     *r_ent = ent;
@@ -225,4 +277,6 @@ void rt_end(double *r_ent, double *r_chisq, double *r_mean,
     *r_scc = scc;
     *r_runs = runs;
     *r_runsz = runsz;
+    *r_N = N;
+    *r_lm_chisq = lm_chisq;
 }

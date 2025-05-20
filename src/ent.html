@@ -127,7 +127,7 @@ information density of a file is of interest.
 
 <h3>SYNOPSIS</h3>
 
-     <b>ent</b> [ <b>-b -c -f -t -u</b> ] [ <i>infile</i> ]
+     <b>ent</b> [ <b>-b -c -f -t -p -u</b> ] [ <i>infile</i> ]
 
 <h3>DESCRIPTION</h3>
 
@@ -281,6 +281,13 @@ The values calculated are as follows:
       the length of the run. In a random data set, the probability that the 
       (I+1)th value is larger or smaller than the Ith value follows a binomial
       distribution, which forms the basis of the runs test.</dd>
+
+<dt><b>Local Means Test</b></dt>
+<dd>  The local means test is a statistical test based on two principles: 
+      the arithmetic mean's p value and a Chi-square goodness-of-fit test.
+      Under randomness hypothesis, each block is independent from all the 
+      other blocks, and so the goodness-of-fit statistic has a Chi-square 
+      distribution with N degrees of freedom.</dd>
 </dl>
 
 <h3>OPTIONS</h3>

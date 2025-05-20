@@ -114,6 +114,9 @@ int main(int argc, char *argv[])
         double runsz, runsp;          /* Variables for Runs test*/
         int runs;
         
+        int N;                        /* Variables for Local Means test*/     
+        double lm_chisq,locmeanp;            
+
         FILE *fp = stdin;
         int counts = FALSE,           /* Print character counts */
             fold = FALSE,             /* Fold upper to lower */
@@ -218,7 +221,7 @@ int main(int argc, char *argv[])
 
         /* Complete calculation */
 
-        rt_end(&ent, &chisq, &mean, &montepi, &scc, &runs, &runsz);
+        rt_end(&ent, &chisq, &mean, &montepi, &scc, &runs, &runsz, &N, &lm_chisq);
 
         /* Calculate p-value for Chi-square test*/
 
@@ -240,15 +243,17 @@ int main(int argc, char *argv[])
 
         runsp = 2 * (1 - poz(fabs(runsz)));
 
-         /* Print terse output if requested */
+        locmeanp = pochisq(lm_chisq, N);
+
+        /* Print terse output if requested */
 
         if (terse) {
             if (csp) {
-                  printf("0,File-%ss,Entropy,Chi-square,Chi-square-p-val,Mean,Mean-p-val,Monte-Carlo-Pi,Monte-Carlo-Pi-p-val,Serial-Correlation,Serial-Correlation-p-val,Runs,Runs-p-val\n", binary ? "bit" : "byte");
-                  printf("1,%ld,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f\n", totalc, ent, chisq, chip, mean, meanp, montepi, montepip, scc, sccp, runs, runsp);
+                  printf("0,File-%ss,Entropy,Chi-square,Chi-square-p-val,Mean,Mean-p-val,Monte-Carlo-Pi,Monte-Carlo-Pi-p-val,Serial-Correlation,Serial-Correlation-p-val,Runs,Runs-p-val,Local-Means-X^2,Local-Means-p-val\n", binary ? "bit" : "byte");
+                  printf("1,%ld,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%f,%f\n", totalc, ent, chisq, chip, mean, meanp, montepi, montepip, scc, sccp, runs, runsp, lm_chisq, locmeanp);
             } else {
-                  printf("0,File-%ss,Entropy,Chi-square,Mean,Monte-Carlo-Pi,Serial-Correlation,Runs\n", binary ? "bit" : "byte");
-                  printf("1,%ld,%f,%f,%f,%f,%f,%d\n", totalc, ent, chisq, mean, montepi, scc, runs);
+                  printf("0,File-%ss,Entropy,Chi-square,Mean,Monte-Carlo-Pi,Serial-Correlation,Runs,Local-Means-X^2\n", binary ? "bit" : "byte");
+                  printf("1,%ld,%f,%f,%f,%f,%f,%d,%f\n", totalc, ent, chisq, mean, montepi, scc, runs, lm_chisq);
             }  
         }
 
@@ -324,6 +329,8 @@ int main(int argc, char *argv[])
            printf("--------------------------------------------------\n");
            printf("The number of runs test is %d runs.\n", runs);
            printf("--------------------------------------------------\n");
+           printf("The local means test's X^2 statistic is %f for %d blocks.\n", lm_chisq, N);
+           printf("--------------------------------------------------\n");
         } else if (!terse) {
            printf("StringENT | Results report\n");
            printf("--------------------------------------------------\n");
@@ -358,7 +365,9 @@ int main(int argc, char *argv[])
            printf("The number of runs test is %d runs.\n", runs);
            printf("p-value   %f\n", runsp);
            printf("--------------------------------------------------\n");
-           
+           printf("The local means test's X^2 statistic is %f for %d blocks.\n", lm_chisq, N);
+           printf("p-value   %f\n", locmeanp);
+           printf("--------------------------------------------------\n");  
         }
 
         return 0;
