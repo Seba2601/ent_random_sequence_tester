@@ -1,4 +1,4 @@
-# ENT — Fourmilab Random Sequence Tester
+# StringENT test suite — ENT battery revisited
 
 The [Fourmilab Random Sequence Tester](https://www.fourmilab.ch/random/),
 **ent**, applies various tests to sequences of bytes stored in files
@@ -7,23 +7,32 @@ evaluating pseudorandom number generators for encryption and
 statistical sampling applications, compression algorithms, and other
 applications where the information density of a file is of interest.
 
+The extension of the battery, named **StringENT** [Luengo & al], successfully introduces two additional tests and provides p-values for all of them, which is the most useful way to determine whether the randomness hypothesis holds.
+
 ## Description
 
-**ent** performs a variety of tests on the stream of bytes in its input
+**StringENT** performs a variety of tests on the stream of bytes in its input
 file (or standard input if no input file is specified) and produces
 output as follows on the standard output stream:
 
-    Entropy = 7.980627 bits per character.
-
+    StringENT | Results report
+    --------------------------------------------------
+    Entropy = 7.9999991407 bits per byte.
     Optimum compression would reduce the size
-    of this 51768 character file by 0 percent.
-
-    Chi square distribution for 51768 samples is 1542.26, and randomly
-    would exceed this value less than 0.01 percent of the times.
-
-    Arithmetic mean value of data bytes is 125.93 (127.5 = random).
-    Monte Carlo value for Pi is 3.169834647 (error 0.90 percent).
-    Serial correlation coefficient is 0.004249 (totally uncorrelated = 0.0).
+    of this 125000000 byte file by 0 percent.
+    --------------------------------------------------
+    Chi square distribution for 125000000 samples is 148.91.
+    --------------------------------------------------
+    Arithmetic mean value of data bytes is 127.4951 (127.5 = random).
+    --------------------------------------------------
+    Monte Carlo value for Pi is 3.141779186 (error 0.01 percent).
+    --------------------------------------------------
+    Serial correlation coefficient is -0.000010 (totally uncorrelated = 0.0).
+    --------------------------------------------------
+    The number of runs test is 62495967 runs.
+    --------------------------------------------------
+    The local means test's X^2 statistic is 115974.390743 for 122070 blocks.
+    --------------------------------------------------
 
 The values calculated are as follows:
 
@@ -41,39 +50,7 @@ its size by 38%. \[Hamming, pp. 104–108\]
 The chi-square test is the most commonly used test for the randomness
 of data, and is extremely sensitive to errors in pseudorandom sequence
 generators. The chi-square distribution is calculated for the stream of
-bytes in the file and expressed as an absolute number and a percentage
-which indicates how frequently a truly random sequence would exceed the
-value calculated. We interpret the percentage as the degree to which
-the sequence tested is suspected of being non-random. If the percentage
-is greater than 99% or less than 1%, the sequence is almost certainly
-not random. If the percentage is between 99% and 95% or between 1% and
-5%, the sequence is suspect. Percentages between 90% and 95% and 5% and
-10% indicate the sequence is “almost suspect”. Note that our JPEG file,
-while very dense in information, is far from random as revealed by the
-chi-square test.
-
-Applying this test to the output of various pseudorandom sequence
-generators is interesting. The low-order 8 bits returned by the
-standard Unix `rand()` function, for example, yields:
-
-    Chi square distribution for 500000 samples is 0.01, and randomly
-    would exceed this value more than 99.99 percent of the times.
-
-While an improved generator \[Park & Miller\] reports:
-
-    Chi square distribution for 500000 samples is 212.53, and randomly
-    would exceed this value 97.53 percent of the times.
-
-Thus, the standard Unix generator (or at least the low-order bytes it
-returns) is unacceptably non-random, while the improved generator is
-much better but still sufficiently non-random to cause concern for
-demanding applications. Contrast both of these software generators with
-the chi-square result of a genuine random sequence created by timing
-radioactive decay events.
-
-    Chi square distribution for 500000 samples is 249.51, and randomly
-    would exceed this value 40.98 percent of the times.
-
+bytes in the file and expressed as an absolute number.
 See \[Knuth, pp. 35–40\] for more information on the chi-square test.
 
 #### Arithmetic Mean
@@ -104,6 +81,40 @@ correlation coefficient on the order of 0.5.  Wildly predictable data
 such as uncompressed bitmaps will exhibit serial correlation 
 coefficients approaching 1.  See [Knuth, pp. 64–65] for more details.
 
+#### Runs Test
+
+The test works by transforming a numerical sequence into a sequence of signs.
+Each value is compared to the median: if the value is greater than the median, 
+it is assigned a plus sign; if it is smaller, it receives a minus sign. This 
+sign sequence is then analyzed for runs—which are uninterrupted sequences of 
+identical signs. A new run starts each time the sign changes.
+The key idea behind this test is that truly random sequences should exhibit 
+a number of runs that falls within a predictable range, based on the number 
+of plus and minus signs observed. The expected number of runs, as well as 
+its statistical variance and other details, can be found in [NIST: Runs test 
+for detecting non-randomness]. Comparing the actual number of runs to this 
+expected value allows us to compute a standardized score (Z-value), which 
+in turn is used to determine a two-tailed p-value.
+
+#### Local Means Test
+
+This test builds on two core ideas: the use of local arithmetic means within 
+the sequence and a classical Chi-square goodness-of-fit analysis.
+The procedure begins by dividing the input sequence into equally sized blocks. 
+Each block contains a fixed number of bytes (e.g., 1024 by default), and any 
+remaining bytes at the end of the sequence that do not fit evenly are discarded. 
+For each block, we compute its average value, which is then compared to the 
+expected mean for random data.
+Because the values within each block should, under the assumption of randomness, 
+fluctuate around the expected mean, these block-wise averages can be treated as 
+approximately normally distributed. We then assess how well the observed 
+distribution of these averages aligns with the theoretical normal distribution 
+using a Chi-square goodness-of-fit test.
+If the sequence is truly random, the block averages should be relatively uniform 
+and centered around the expected value. However, if the sequence contains structure
+these local averages can become significantly skewed. The Chi-square statistic will 
+then grow accordingly, leading to very small p-values.
+
 ## License
 
 This software is licensed under the Creative Commons
@@ -131,6 +142,12 @@ Park, Stephen K. and Keith W. Miller.  “Random Number Generators: Good
 Ones Are Hard to Find”. Communications of the ACM, October 1988, p. 
 1192.
 
+[Luengo & al]
+Almaraz Luengo, E. S., Alaña Olivares, B., García Villalba, L. J. et al. «StringENT Test Suite: ENT Battery Revisited for Efficient P Value Computation». Journal of Cryptographic Engineering, vol. 13, n.o 2, junio de 2023, pp. 235-49.
+
 *[Introduction to Probability and
 Statistics](https://www.fourmilab.ch/rpkp/experiments/statistics.html)*
 at Fourmilab
+
+*[NIST: Runs test for detecting non-randomness](https://www.itl.
+nist.gov/div898/handbook/eda/section3/eda35d.htm)*
