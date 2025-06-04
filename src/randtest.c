@@ -245,6 +245,13 @@ void rt_end(double *r_ent, double *r_chisq, double *r_mean,
        mean. */
 
     cexp = totalc / (binary ? 2.0 : 256.0);  /* Expected count per bin */
+
+    /* rule-of-thumb check: χ² requires Eᵢ ≥ 5 for validity */
+    if (cexp < 5.0) {
+      fprintf(stderr,"Warning: expected count per bin (%.2f) < 5; "
+         "χ² test may be unreliable.\n", cexp);
+    }
+
     for (i = 0; i < (binary ? 2 : 256); i++) {
        double a = ccount[i] - cexp;;
 
