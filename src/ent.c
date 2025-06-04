@@ -63,7 +63,6 @@ static void help(void)
         printf("\n                   -t   Terse output in CSV format");
         printf("\n                   -p   Include p-values");
         printf("\n                   -u   Print this message\n");
-        printf("\nVersion " VERSION);
         printf("\nBy John Walker");
         printf("\n   https://www.fourmilab.ch/\n");
 }
@@ -256,10 +255,10 @@ int main(int argc, char *argv[])
         if (terse) {
             if (csp) {
                   printf("0,File-%ss,Entropy,Chi-square,Chi-square-p-val,Mean,Mean-p-val,Monte-Carlo-Pi,Monte-Carlo-Pi-p-val,Serial-Correlation,Serial-Correlation-p-val,Runs,Runs-p-val,Local-Means-X^2,Local-Means-p-val\n", binary ? "bit" : "byte");
-                  printf("1,%ld,%.10f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%f,%f\n", totalc, ent, chisq, chip, mean, meanp, montepi, montepip, scc, sccp, runs, runsp, lm_chisq, locmeanp);
+                  printf("1,%ld,%.12f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%f,%f\n", totalc, ent, chisq, chip, mean, meanp, montepi, montepip, scc, sccp, runs, runsp, lm_chisq, locmeanp);
             } else {
                   printf("0,File-%ss,Entropy,Chi-square,Mean,Monte-Carlo-Pi,Serial-Correlation,Runs,Local-Means-X^2\n", binary ? "bit" : "byte");
-                  printf("1,%ld,%.10f,%f,%f,%f,%f,%d,%f\n", totalc, ent, chisq, mean, montepi, scc, runs, lm_chisq);
+                  printf("1,%ld,%.12f,%f,%f,%f,%f,%d,%f\n", totalc, ent, chisq, mean, montepi, scc, runs, lm_chisq);
             }  
         }
 
@@ -301,7 +300,7 @@ int main(int argc, char *argv[])
         if (!terse && !csp) {
            printf("StringENT | Results report\n");
            printf("--------------------------------------------------\n");
-           printf("Entropy = %.10f bits per %s.", ent, samp);
+           printf("Entropy = %.12f bits per %s.", ent, samp);
            printf("\nOptimum compression would reduce the size\n");
            printf("of this %ld %s file by %d percent.\n", totalc, samp,
                     (short) ((100 * ((binary ? 1 : 8) - ent) /
@@ -340,7 +339,7 @@ int main(int argc, char *argv[])
         } else if (!terse) {
            printf("StringENT | Results report\n");
            printf("--------------------------------------------------\n");
-           printf("Entropy = %.10f bits per %s.", ent, samp);
+           printf("Entropy = %.12f bits per %s.", ent, samp);
            printf("\nOptimum compression would reduce the size\n");
            printf("of this %ld %s file by %d percent.\n", totalc, samp,
                     (short) ((100 * ((binary ? 1 : 8) - ent) /
